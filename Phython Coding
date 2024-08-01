@@ -1,0 +1,41 @@
+# Load the data file
+data_file_path = '/mnt/data/wdbc.data'
+names_file_path = '/mnt/data/wdbc.names'
+
+# Reading the data file to see its content
+with open(data_file_path, 'r') as file:
+    data_content = file.read()
+
+# Reading the names file to see its content
+with open(names_file_path, 'r') as file:
+    names_content = file.read()
+
+# Displaying the first few lines of each file to understand the structure
+data_content[:1000], names_content
+
+import pandas as pd
+
+# Define column names based on the information provided
+columns = ['ID', 'Diagnosis']
+mean_features = ['mean_radius', 'mean_texture', 'mean_perimeter', 'mean_area', 'mean_smoothness', 
+                 'mean_compactness', 'mean_concavity', 'mean_concave_points', 'mean_symmetry', 'mean_fractal_dimension']
+se_features = ['se_radius', 'se_texture', 'se_perimeter', 'se_area', 'se_smoothness', 
+               'se_compactness', 'se_concavity', 'se_concave_points', 'se_symmetry', 'se_fractal_dimension']
+worst_features = ['worst_radius', 'worst_texture', 'worst_perimeter', 'worst_area', 'worst_smoothness', 
+                  'worst_compactness', 'worst_concavity', 'worst_concave_points', 'worst_symmetry', 'worst_fractal_dimension']
+
+columns += mean_features + se_features + worst_features
+
+# Load the dataset
+data = pd.read_csv(data_file_path, header=None, names=columns)
+
+# Display the first few rows of the dataframe
+data.head()
+
+# Summary statistics of the dataset
+summary_stats = data.describe()
+
+# Distribution of the 'Diagnosis' variable
+class_distribution = data['Diagnosis'].value_counts()
+
+summary_stats, class_distribution
