@@ -1,0 +1,94 @@
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from scipy.stats import ttest_ind
+
+# Define column names based on the information provided
+columns = ['ID', 'Diagnosis']
+mean_features = ['mean_radius', 'mean_texture', 'mean_perimeter', 'mean_area', 'mean_smoothness', 
+                 'mean_compactness', 'mean_concavity', 'mean_concave_points', 'mean_symmetry', 'mean_fractal_dimension']
+se_features = ['se_radius', 'se_texture', 'se_perimeter', 'se_area', 'se_smoothness', 
+               'se_compactness', 'se_concavity', 'se_concave_points', 'se_symmetry', 'se_fractal_dimension']
+worst_features = ['worst_radius', 'worst_texture', 'worst_perimeter', 'worst_area', 'worst_smoothness', 
+                  'worst_compactness', 'worst_concavity', 'worst_concave_points', 'worst_symmetry', 'worst_fractal_dimension']
+
+columns += mean_features + se_features + worst_features
+
+# Load the dataset
+data_file_path = '/mnt/data/wdbc.data'
+data = pd.read_csv(data_file_path, header=None, names=columns)
+
+# Splitting the dataset into benign and malignant
+benign_data = data[data['Diagnosis'] == 'B']
+malignant_data = data[data['Diagnosis'] == 'M']
+
+# Question 1: Average radius of cell nuclei for malignant vs benign tumors
+avg_radius_benign = benign_data['mean_radius'].mean()
+avg_radius_malignant = malignant_data['mean_radius'].mean()
+
+# Question 2: Ranges (min-max) of the mean area for both classes
+range_area_benign = (benign_data['mean_area'].min(), benign_data['mean_area'].max())
+range_area_malignant = (malignant_data['mean_area'].min(), malignant_data['mean_area'].max())
+
+# Question 3: Percentage of benign and malignant cases
+total_cases = len(data)
+percentage_benign = (len(benign_data) / total_cases) * 100
+percentage_malignant = (len(malignant_data) / total_cases) * 100
+
+# Question 4: Features with the highest correlation with the diagnosis
+# Encode Diagnosis for correlation
+data_encoded = data.copy()
+data_encoded['Diagnosis'] = data_encoded['Diagnosis'].apply(lambda x: 1 if x == 'M' else 0)
+correlation_with_diagnosis = data_encoded.corr()['Diagnosis'].abs().sort_values(ascending=False)
+
+# Question 5: Highly correlated features indicating redundancy
+correlation_matrix = data.drop(columns=['ID']).corr().abs()
+upper_tri = correlation_matrix.where(np.triu(np.ones(correlation_matrix.shape), k=1).astype(bool))
+highly_correlated_features = [(column, upper_tri[column].idxmax(), upper_tri[column].max()) 
+                              for column in upper_tri.columns if upper_tri[column].max() > 0.75]
+
+# Question 6: Histograms of the mean radius for benign and malignant tumors
+plt.figure(figsize=(12, 6))
+sns.histplot(benign_data['mean_radius'], kde=True, color='blue', label='Benign', bins=30)
+sns.histplot(malignant_data['mean_radius'], kde=True, color='red', label='Malignant', bins=30)
+plt.legend()
+plt.title('Histogram of Mean Radius for Benign and Malignant Tumors')
+plt.xlabel('Mean Radius')
+plt.ylabel('Frequency')
+plt.show()
+
+# Question 7: Box plots of mean texture for benign and malignant tumors
+plt.figure(figsize=(12, 6))
+sns.boxplot(x='Diagnosis', y='mean_texture', data=data)
+plt.title('Box Plot of Mean Texture for Benign and Malignant Tumors')
+plt.xlabel('Diagnosis')
+plt.ylabel('Mean Texture')
+plt.show()
+
+# Question 8: Statistical significance of the mean perimeter between benign and malignant tumors
+t_stat, p_val = ttest_ind(benign_data['mean_perimeter'], malignant_data['mean_perimeter'], equal_var=False)
+
+# Compiling the results
+analysis_results = {
+    'Average Radius': {
+        'Benign': avg_radius_benign,
+        'Malignant': avg_radius_malignant
+    },
+    'Range of Mean Area': {
+        'Benign': range_area_benign,
+        'Malignant': range_area_malignant
+    },
+    'Class Percentage': {
+        'Benign': percentage_benign,
+        'Malignant': percentage_malignant
+    },
+    'Top Correlated Features with Diagnosis': correlation_with_diagnosis.head(10),
+    'Highly Correlated Feature Pairs': highly_correlated_features,
+    'T-test of Mean Perimeter': {
+        't-statistic': t_stat,
+        'p-value': p_val
+    }
+}
+
+analysis_results
